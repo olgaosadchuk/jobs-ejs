@@ -1,11 +1,19 @@
 const express = require("express");
 require("express-async-errors");
-require("dotenv").config(); // Load environment variables
+require("dotenv").config(); 
 
 const app = express();
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const flash = require("connect-flash");
+const passport = require("passport");
+const passportInit = require("./passport/passportInit");
+
+// MongoDB connection
+const connectDB = require("./db/connect");
+
+// Import routes
+const sessionRoutes = require("./routes/sessionRoutes");  
 
 // Set up view engine
 app.set("view engine", "ejs");
@@ -32,11 +40,16 @@ const sessionParams = {
 
 if (app.get("env") === "production") {
   app.set("trust proxy", 1);
-  sessionParams.cookie.secure = true;
+  sessionParams.cookie.secure = true; 
 }
 
 app.use(session(sessionParams));
 app.use(flash());
+
+// Initialize Passport
+passportInit();
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Middleware to set flash messages in res.locals
 app.use((req, res, next) => {
@@ -45,27 +58,28 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/register", (req, res) => {
+  res.render("register");  
+});
+
 // Routes
 app.get("/", (req, res) => {
   res.render("home");
 });
 
+// Use session routes
+app.use("/sessions", sessionRoutes);  
+
+// GET route for displaying secretWord page
 app.get("/secretWord", (req, res) => {
-  if (!req.session.secretWord) {
-    req.session.secretWord = "syzygy";
-  }
-  res.render("secretWord", { secretWord: req.session.secretWord });
+  const secretWord = "SuperSecretWord";  
+  res.render("secretWord", { secretWord });
 });
 
+// POST route for updating the secretWord
 app.post("/secretWord", (req, res) => {
-  if (req.body.secretWord.toUpperCase()[0] == "P") {
-    req.flash("error", "That word won't work!");
-    req.flash("error", "You can't use words that start with p.");
-  } else {
-    req.session.secretWord = req.body.secretWord;
-    req.flash("info", "The secret word was changed.");
-  }
-  res.redirect("/secretWord");
+  const newSecretWord = req.body.secretWord; 
+  res.render("secretWord", { secretWord: newSecretWord }); 
 });
 
 // 404 and Error Handling
@@ -80,9 +94,16 @@ app.use((err, req, res, next) => {
 
 // Start server
 const port = process.env.PORT || 5000;
+
 const start = async () => {
   try {
-    app.listen(port, () => console.log(`Server is listening on port ${port}...`));
+    // Connect to MongoDB
+    await connectDB(process.env.MONGO_URI);
+
+    // Start the server
+    app.listen(port, () =>
+      console.log(`Server is listening on port ${port}...`)
+    );
   } catch (error) {
     console.log(error);
   }

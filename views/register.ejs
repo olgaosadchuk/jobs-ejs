@@ -1,0 +1,42 @@
+<form method="POST" action="/sessions/register"></form>
+  <div class="form-group">
+    <label for="name">Enter your name:</label>
+    <input type="text" id="name" name="name" class="form-control" required />
+  </div>
+
+  <div class="form-group">
+    <label for="email">Enter your email:</label>
+    <input type="email" id="email" name="email" class="form-control" required />
+  </div>
+
+  <div class="form-group">
+    <label for="password">Enter your password:</label>
+    <!-- Add pattern for password validation (e.g., at least 8 characters) -->
+    <input
+      type="password"
+      id="password"
+      name="password"
+      class="form-control"
+      pattern=".{8,}" 
+      title="Password must be at least 8 characters long"
+      required
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="password1">Confirm your password:</label>
+    <input
+      type="password"
+      id="password1"
+      name="password1"
+      class="form-control"
+      required
+    />
+  </div>
+
+  <div class="form-group">
+    <button type="submit" class="btn btn-primary">Register</button>
+    <!-- Use an anchor tag styled as a button for navigation -->
+    <a href="/" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
