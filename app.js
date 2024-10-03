@@ -24,9 +24,25 @@ const csrfProtection = csrf({ cookie: true });
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());  // Cookie-parser middleware
 
+// Set Content-Type based on route
+app.use((req, res, next) => {
+    if (req.path === "/multiply") {
+        res.set("Content-Type", "application/json");
+    } else {
+        res.set("Content-Type", "text/html");
+    }
+    next();
+});
+
+// Determine the correct MongoDB URI based on the environment
+let mongoURL = process.env.MONGO_URI;
+if (process.env.NODE_ENV === "test") {
+    mongoURL = process.env.MONGO_URI_TEST;  // Use test database URI
+}
+
 // Session setup
 const store = new MongoDBStore({
-    uri: process.env.MONGO_URI,
+    uri: mongoURL,
     collection: "mySessions",
 });
 store.on("error", function (error) {
@@ -42,7 +58,7 @@ const sessionParams = {
 };
 
 if (app.get("env") === "production") {
-    app.set("trust proxy", 1);
+    app.set("trust proxy", 1); 
     sessionParams.cookie.secure = true; 
 }
 
@@ -63,6 +79,21 @@ app.get("/secretWord", (req, res) => {
     res.send("This is the secret word page.");
 });
 
+// Multiply API Route
+app.get("/multiply", (req, res) => {
+    const first = parseFloat(req.query.first);
+    const second = parseFloat(req.query.second);
+    let result;
+
+    if (isNaN(first) || isNaN(second)) {
+        result = "NaN"; 
+    } else {
+        result = first * second;
+    }
+
+    res.json({ result: result });
+});
+
 // Jobs route with CSRF token
 app.use("/jobs", jobRoutes);
 
@@ -81,8 +112,8 @@ const port = process.env.PORT || 5000;
 
 const start = async () => {
     try {
-        // Connect to MongoDB
-        await connectDB(process.env.MONGO_URI);
+        // Connect to MongoDB using the correct URL (production or test)
+        await connectDB(mongoURL);
 
         // Start the server
         app.listen(port, () =>
@@ -94,3 +125,5 @@ const start = async () => {
 };
 
 start();
+
+module.exports = app; 
