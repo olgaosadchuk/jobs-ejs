@@ -22,7 +22,7 @@ router
   .get(registerShow)   // Show the registration form
   .post(registerDo);   // Handle the registration logic
 
-// Logoff Route (if you have this route)
+// Logoff Route 
 router.route("/logoff").get(logoff);
 
 module.exports = router;
